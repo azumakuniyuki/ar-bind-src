@@ -1,10 +1,11 @@
-Ansible Role: ar-bind-src
+Ansible Role: bind(src)
 ================================================================================
-Build and install ISC-BIND from a source code at CentOS 7
+Build and install ISC-BIND 9 from a source code at CentOS 7
 
 - Build BIND from a source code at /usr/local/src
 - Install BIND into /opt/named
 - Deploy files for systemd into /usr/lib/systemd
+- Open tcp/53 and udp/53
 
 Requirements
 --------------------------------------------------------------------------------
