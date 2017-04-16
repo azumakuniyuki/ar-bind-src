@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# This script generates {{ bind.serverroot }}/etc/rndc.key if doesn't exist AND
+# if there is no rndc.conf
+#
+BIND_ROOT="{{ bind.serverroot }}"
+BIND_SBIN="$BIND_ROOT/sbin"
+BIND_CONF="$BIND_ROOT/etc"
+
+. /etc/rc.d/init.d/functions
+
+if [ ! -s $BIND_CONF/rndc.key -a ! -s $BIND_CONF/rndc.conf ]; then
+  echo -n $"Generating $BIND_CONF/rndc.key:"
+
+  if $BIND_SBIN/rndc-confgen -a -r /dev/urandom > /dev/null 2>&1; then
+    chmod 640 $BIND_CONF/rndc.key
+    chown root.{{ bind.user.group }} $BIND_CONF/rndc.key
+
+    [ -x /sbin/restorecon ] && /sbin/restorecon $BIND_CONF/rndc.key
+    success $"$BIND_CONF/rndc.key generation"
+    echo
+  else
+    failure $"$BIND_CONF/rndc.key generation"
+    echo
+  fi
+fi
+

@@ -1,0 +1,61 @@
+---
+#  _     _           _  __          __     ___            _        
+# | |__ (_)_ __   __| |/ /__ _ __ __\ \   / / |_ __ _ ___| | _____ 
+# | '_ \| | '_ \ / _` | / __| '__/ __| | / /| __/ _` / __| |/ / __|
+# | |_) | | | | | (_| | \__ \ | | (__| |/ / | || (_| \__ \   <\__ \
+# |_.__/|_|_| |_|\__,_| |___/_|  \___| /_/   \__\__,_|___/_|\_\___/
+#                      \_\          /_/                            
+# boot-script
+- block:
+    - name: boot-script | RedHat | /etc/init.d/bind should be deployed
+      when: ansible_distribution_major_version < 7
+      template:
+        src:   "etc/init.d/bind.RedHat.j2"
+        dest:  "/etc/init.d/{{ bind.initscript }}"
+        mode:  "0755"
+        owner: "root"
+        group: "root"
+
+    - name: boot-script | RedHat | /etc/rc.d/init.d/{{ bind.initscript }} should be deployed
+      when: ansible_distribution_major_version < 7
+      shell: /sbin/chkconfig --add {{ bind.initscript }}
+      args:
+        creates: "/etc/rc.d/rc0.d/K87{{ bind.initscript }}"
+
+    - name: boot-script | RedHat | /usr/lib/systemd/system/{{ bind.initscript }}.service should be deployed
+      when: ansible_distribution_major_version > 6
+      register: deploy_bind_service_unit
+      template:
+        src:   "usr/lib/systemd/system/bind.service.j2"
+        dest:  "/usr/lib/systemd/system/{{ bind.initscript }}.service"
+        mode:  "0644"
+        owner: "root"
+        group: "root"
+
+    - name: boot-script | RedHat | {{ bind.initscript }} should be reloaded
+      when: ansible_distribution_major_version > 6 and deploy_bind_service_unit|changed
+      shell: systemctl daemon-reload
+
+    - name: boot-script | RedHat | /usr/lib/systemd/system/{{ bind.initscript }}-rndc-key.service should be deployed
+      when: ansible_distribution_major_version > 6
+      template:
+        src:   "usr/lib/systemd/system/bind-rndc-key.service.j2"
+        dest:  "/usr/lib/systemd/system/{{ bind.initscript }}-rndc-key.service"
+        mode:  "0644"
+        owner: "root"
+        group: "root"
+
+    - name: boot-script | RedHat | Deploy /etc/sysconfig/{{ bind.initscript }} should be deployed
+      when: ansible_distribution_major_version > 6
+      notify: Restart BIND
+      template:
+        src:    "etc/sysconfig/bind.j2"
+        dest:   "/etc/sysconfig/{{ bind.initscript }}"
+        backup: "yes"
+
+    - name: boot-script | Turn on init script
+      service: 
+        name:    "{{ bind.initscript }}"
+        enabled: "yes"
+  when: ansible_os_family == "RedHat"
+

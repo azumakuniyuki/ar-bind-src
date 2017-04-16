@@ -1,0 +1,134 @@
+---
+#  _     _           _  __          __     ___            _        
+# | |__ (_)_ __   __| |/ /__ _ __ __\ \   / / |_ __ _ ___| | _____ 
+# | '_ \| | '_ \ / _` | / __| '__/ __| | / /| __/ _` / __| |/ / __|
+# | |_) | | | | | (_| | \__ \ | | (__| |/ / | || (_| \__ \   <\__ \
+# |_.__/|_|_| |_|\__,_| |___/_|  \___| /_/   \__\__,_|___/_|\_\___/
+#                      \_\          /_/                            
+# make-config
+- name: make-config | chroot directory for bind9 should be created
+  file:
+    path:  "{{ bind.changeroot }}"
+    mode:  "0755"
+    state: "directory"
+    owner: "{{ bind.user.username }}"
+    group: "{{ bind.user.group }}"
+
+- name: make-config | Each directory for bind9 should be created
+  file:
+    path:  "{{ bind.changeroot }}/{{ item }}"
+    mode:  "0755"
+    state: "directory"
+    owner: "{{ bind.user.username }}"
+    group: "{{ bind.user.group }}"
+  with_items:
+    - dev
+    - etc
+    - libexec
+    - var/run
+    - var/log
+    - var/data/slaves
+    - tmp
+
+- name: make-config | Sub directories for master zone should be created
+  file:
+    path:  "{{ bind.changeroot }}/var/data/masters/{{ item }}"
+    mode:  "0755"
+    owner: "{{ bind.user.username }}"
+    group: "{{ bind.user.group }}"
+    state: "directory"
+  with_items: [0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]
+
+- name: make-config | Sub directories for slave zone should be created
+  file:
+    path:  "{{ bind.changeroot }}/var/data/slaves/{{ item }}"
+    mode:  "0755"
+    owner: "{{ bind.user.username }}"
+    group: "{{ bind.user.group }}"
+    state: "directory"
+  with_items: [0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]
+
+- name: mame-config | /dev/random
+  shell: mknod -m 666 {{ item.name }} c 1 {{ item.minor }}
+  args:
+    chdir:   "{{ bind.changeroot }}/dev"
+    creates: "{{ item.name }}"
+  with_items:
+    - { name: 'random',  minor: 8 }
+    - { name: 'urandom', minor: 9 }
+    - { name: 'zero',    minor: 5 }
+    - { name: 'null',    minor: 3 }
+
+- name: make-config | Deploy {{ bind.changeroot }}/etc/named.conf
+  notify: Restart BIND
+  template:
+    src:    "opt/named/etc/named.conf.j2"
+    dest:   "{{ bind.changeroot }}/etc/named.conf"
+    backup: "yes"
+
+- name: make-config | Deploy {{ bind.serverroot }}/libexec/generate-rndc-key
+  template:
+    src:    "opt/named/libexec/generate-rndc-key.j2"
+    dest:   "{{ bind.serverroot }}/libexec/generate-rndc-key"
+    mode:   "0755"
+    owner:  "root"
+    backup: "yes"
+
+- name: make-config | localtime file must exist
+  shell: /bin/cp /etc/localtime {{ bind.changeroot }}/etc/localtime
+  args:
+    chdir:   "{{ bind.changeroot }}"
+    creates: "{{ bind.changeroot }}/etc/localtime"
+
+- name: make-config | {{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key should be created
+  shell: >
+    {{ bind.serverroot }}/sbin/rndc-confgen -a -p 953
+    -c /etc/{{ ansible_hostname }}-rndc-key 
+    -k {{ ansible_hostname }}-rndc-key
+    -r /dev/urandom
+    -u {{ bind.user.username }}
+    -t {{ bind.changeroot }}
+  args:
+    chdir:   "{{ bind.changeroot }}"
+    creates: "{{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key"
+
+- name: make-config | {{ bind.changeroot }}/etc/rndc.key should be linked
+  file:
+    src:   "{{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key"
+    path:  "{{ bind.changeroot }}/etc/rndc.key"
+    state: link
+
+- name: make-config | {{ bind.changeroot }}/etc/rootzone-dnssec-keys should be deployed
+  shell: >
+    /bin/cp bind.keys {{ bind.changeroot }}/etc/rootzone-dnssec-keys
+  args:
+    chdir:   "{{ bind.workingdir }}/bind-{{ bind.version }}"
+    creates: "{{ bind.changeroot }}/etc/rootzone-dnssec-keys"
+
+- name: make-config | {{ bind.changeroot }}/var/data/named.root should be deployed
+  get_url:
+    url:  ftp://rs.internic.net/domain/named.root
+    dest: "{{ bind.changeroot }}/var/data/named.root"
+
+- name: make-config | localhost.zone and 127.in-addr.arpa.rev should be deployed
+  template:
+    src:  "opt/named/var/data/masters/{{ item }}.j2"
+    dest: "{{ bind.changeroot }}/var/data/masters/{{ item }}"
+    mode: "0644"
+    owner: "{{ bind.user.username }}"
+    group: "{{ bind.user.group }}"
+  with_items: "{{ bind.zones.master }}"
+
+- name: make-config | dig command should be linked from /usr/local/bin/dig
+  file:
+    src:   "{{ bind.serverroot }}/bin/dig"
+    dest:  "/usr/local/bin/dig"
+    state: "link"
+
+- name: make-config | Port 53 should be opened
+  firewalld:
+    service:   "dns"
+    state:     "enabled"
+    immediate: true
+    permanent: true
+

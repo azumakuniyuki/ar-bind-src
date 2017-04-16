@@ -1,0 +1,7 @@
+[Unit]
+Description=Generate rndc key for BIND (DNS)
+
+[Service]
+Type=oneshot
+ExecStart={{ bind.serverroot }}/libexec/generate-rndc-key
+

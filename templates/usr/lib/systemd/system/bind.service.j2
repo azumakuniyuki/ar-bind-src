@@ -1,0 +1,23 @@
+[Unit]
+Description=BIND (DNS)
+Wants=nss-lookup.target
+Wants={{ bind.initscript }}-rndc-key.service
+Before=nss-lookup.target
+After=network.target
+After={{ bind.initscript }}-rndc-key.service
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/{{ bind.initscript }}
+Environment=KRB5_KTNAME=/etc/named.keytab
+PIDFile={{ bind.serverroot }}/var/run/named.pid
+
+ExecStartPre=/bin/bash -c 'if [ ! "$DISABLE_ZONE_CHECKING" == "yes" ]; then {{ bind.serverroot }}/sbin/named-checkconf -zt {{ bind.changeroot }} /etc/named.conf; else echo "Checking of zone files is disabled"; fi'
+ExecStart={{ bind.serverroot }}/sbin/named -u {{ bind.user.username }} $OPTIONS
+ExecReload=/bin/sh -c '{{ bind.serverroot }}/sbin/rndc reload > /dev/null 2>&1 || /bin/kill -HUP $MAINPID'
+ExecStop=/bin/sh -c '{{ bind.serverroot }}/sbin/rndc stop > /dev/null 2>&1 || /bin/kill -TERM $MAINPID'
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,42 @@
+---
+#  _     _           _  __          __     ___            _        
+# | |__ (_)_ __   __| |/ /__ _ __ __\ \   / / |_ __ _ ___| | _____ 
+# | '_ \| | '_ \ / _` | / __| '__/ __| | / /| __/ _` / __| |/ / __|
+# | |_) | | | | | (_| | \__ \ | | (__| |/ / | || (_| \__ \   <\__ \
+# |_.__/|_|_| |_|\__,_| |___/_|  \___| /_/   \__\__,_|___/_|\_\___/
+#                      \_\          /_/                            
+# compile-src
+- name: compile-src | REBUILD | make clean
+  when: bind.rebuild == true
+  shell: make clean
+  args:
+    chdir:   "{{ bind.workingdir }}/bind-{{ bind.version }}/"
+    removes: "Makefile"
+
+- name: compile-src | bind {{ bind.version }} should be configured
+  notify: Restart BIND
+  shell: >
+    /bin/sh configure
+    --prefix={{ bind.serverroot }}
+    --with-openssl={{ bind.openssldir }}
+    --enable-largefile
+    --disable-ipv6
+  args:
+    chdir:   "{{ bind.workingdir }}/bind-{{ bind.version }}/"
+    creates: "Makefile"
+
+- name: compile-src | make bind {{ bind.version }}
+  notify: Restart BIND
+  register: make_bind_binary
+  shell: make
+  args:
+    chdir:   "{{ bind.workingdir }}/bind-{{ bind.version }}/"
+    creates: "bin/named/named"
+
+- name: compile-src | bind {{ bind.version }} should be installed
+  when: make_bind_binary.changed
+  notify: Restart BIND
+  shell: make install
+  args:
+    chdir: "{{ bind.workingdir }}/bind-{{ bind.version }}/"
+

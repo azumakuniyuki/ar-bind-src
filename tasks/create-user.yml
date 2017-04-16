@@ -1,0 +1,25 @@
+---
+#  _     _           _  __          __     ___            _        
+# | |__ (_)_ __   __| |/ /__ _ __ __\ \   / / |_ __ _ ___| | _____ 
+# | '_ \| | '_ \ / _` | / __| '__/ __| | / /| __/ _` / __| |/ / __|
+# | |_) | | | | | (_| | \__ \ | | (__| |/ / | || (_| \__ \   <\__ \
+# |_.__/|_|_| |_|\__,_| |___/_|  \___| /_/   \__\__,_|___/_|\_\___/
+#                      \_\          /_/                            
+# create-user
+- name: create-user | Group {{ bind.user.group }}({{ bind.user.gid }}) should be created
+  group:
+    name:  "{{ bind.user.group }}"
+    gid:   "{{ bind.user.gid }}"
+    state: "present"
+
+- name: create-user | User {{ bind.user.username }}({{ bind.user.uid }}) should be created
+  user:
+    createhome: "no"
+    state:   "present"
+    name:    "{{ bind.user.username }}"
+    uid:     "{{ bind.user.uid }}"
+    group:   "{{ bind.user.group }}"
+    shell:   "{{ bind.user.shell }}"
+    home:    "{{ bind.serverroot }}"
+    comment: "{{ bind.user.comment }}"
+
