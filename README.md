@@ -15,6 +15,8 @@ Requirements
 
 Role Variables
 --------------------------------------------------------------------------------
+The following variables are defined in defaults/main.yml file.
+
 ```yaml
 bind:
   started: true
@@ -54,7 +56,6 @@ Example Playbook
 - hosts: all
   roles:
     - { role: azumakuniyuki.ar-bind-src, bind.version: "9.10.4-P9", bind.rebuild: true }
-
 ```
 
 License
