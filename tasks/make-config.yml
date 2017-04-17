@@ -37,7 +37,7 @@
     owner: "{{ bind.user.username }}"
     group: "{{ bind.user.group }}"
     state: "directory"
-  with_items: [0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]
+  with_items: [0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,_]
 
 - name: make-config | Sub directories for slave zone should be created
   file:
@@ -46,7 +46,7 @@
     owner: "{{ bind.user.username }}"
     group: "{{ bind.user.group }}"
     state: "directory"
-  with_items: [0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]
+  with_items: [0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,_]
 
 - name: mame-config | /dev/random
   shell: mknod -m 666 {{ item.name }} c 1 {{ item.minor }}
@@ -81,6 +81,7 @@
     creates: "{{ bind.changeroot }}/etc/localtime"
 
 - name: make-config | {{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key should be created
+  notify: Restart BIND
   shell: >
     {{ bind.serverroot }}/sbin/rndc-confgen -a -p 953
     -c /etc/{{ ansible_hostname }}-rndc-key 
@@ -96,9 +97,10 @@
   file:
     src:   "{{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key"
     path:  "{{ bind.changeroot }}/etc/rndc.key"
-    state: link
+    state: "link"
 
 - name: make-config | {{ bind.changeroot }}/etc/rootzone-dnssec-keys should be deployed
+  notify: Restart BIND
   shell: >
     /bin/cp bind.keys {{ bind.changeroot }}/etc/rootzone-dnssec-keys
   args:
@@ -106,11 +108,13 @@
     creates: "{{ bind.changeroot }}/etc/rootzone-dnssec-keys"
 
 - name: make-config | {{ bind.changeroot }}/var/data/named.root should be deployed
+  notify: Restart BIND
   get_url:
     url:  ftp://rs.internic.net/domain/named.root
     dest: "{{ bind.changeroot }}/var/data/named.root"
 
-- name: make-config | localhost.zone and 127.in-addr.arpa.rev should be deployed
+- name: make-config | Master zone files should be deployed
+  notify: Restart BIND
   template:
     src:  "opt/named/var/data/masters/{{ item }}.j2"
     dest: "{{ bind.changeroot }}/var/data/masters/{{ item }}"
@@ -119,10 +123,26 @@
     group: "{{ bind.user.group }}"
   with_items: "{{ bind.zones.master }}"
 
+- name: make-config | Slave zone files should be deployed
+  notify: Restart BIND
+  template:
+    src:  "opt/named/var/data/slaves/{{ item }}.j2"
+    dest: "{{ bind.changeroot }}/var/data/slaves/{{ item }}"
+    mode: "0644"
+    owner: "{{ bind.user.username }}"
+    group: "{{ bind.user.group }}"
+  with_items: "{{ bind.zones.slave }}"
+
 - name: make-config | dig command should be linked from /usr/local/bin/dig
   file:
     src:   "{{ bind.serverroot }}/bin/dig"
     dest:  "/usr/local/bin/dig"
+    state: "link"
+
+- name: make-config | rndc command should be linked from /usr/local/sbin/rndc
+  file:
+    src:   "{{ bind.serverroot }}/sbin/rndc"
+    dest:  "/usr/local/sbin/rndc"
     state: "link"
 
 - name: make-config | Port 53 should be opened
