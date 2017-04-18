@@ -22,13 +22,13 @@
     owner: "{{ bind.user.username }}"
     group: "{{ bind.user.group }}"
   with_items:
-    - dev
-    - etc
-    - libexec
-    - var/run
-    - var/log
-    - var/data/slaves
-    - tmp
+    - "dev"
+    - "etc"
+    - "libexec"
+    - "var/run"
+    - "var/log"
+    - "var/data/slaves"
+    - "tmp"
 
 - name: make-config | Sub directories for master zone should be created
   file:
@@ -110,7 +110,7 @@
 - name: make-config | {{ bind.changeroot }}/var/data/named.root should be deployed
   notify: Restart BIND
   get_url:
-    url:  ftp://rs.internic.net/domain/named.root
+    url:  "ftp://rs.internic.net/domain/named.root"
     dest: "{{ bind.changeroot }}/var/data/named.root"
 
 - name: make-config | Master zone files should be deployed
