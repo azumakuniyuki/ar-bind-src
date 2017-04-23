@@ -123,16 +123,6 @@
     group: "{{ bind.user.group }}"
   with_items: "{{ bind.zones.master }}"
 
-- name: make-config | Slave zone files should be deployed
-  notify: Restart BIND
-  template:
-    src:  "opt/named/var/data/slaves/{{ item }}.j2"
-    dest: "{{ bind.changeroot }}/var/data/slaves/{{ item }}"
-    mode: "0644"
-    owner: "{{ bind.user.username }}"
-    group: "{{ bind.user.group }}"
-  with_items: "{{ bind.zones.slave }}"
-
 - name: make-config | dig command should be linked from /usr/local/bin/dig
   file:
     src:   "{{ bind.serverroot }}/bin/dig"

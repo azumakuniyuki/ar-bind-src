@@ -27,5 +27,4 @@ bind:
     master:
       - "l/localhost.zone"
       - "1/127.in-addr.arpa.rev"
-    slave: []
 
