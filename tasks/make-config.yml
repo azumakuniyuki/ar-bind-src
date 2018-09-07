@@ -27,21 +27,28 @@
     - "libexec"
     - "var/run"
     - "var/log"
-    - "var/data/slaves"
     - "tmp"
 
 - name: make-config | Sub directories for master zone should be created
   file:
-    path:  "{{ bind.changeroot }}/var/data/masters/{{ item }}"
+    path:  "{{ bind.changeroot }}/{{ bind.dnszonedir }}/masters/{{ item }}"
     mode:  "0755"
     owner: "{{ bind.user.username }}"
     group: "{{ bind.user.group }}"
     state: "directory"
   with_items: [0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,_]
 
+- name: make-config | Directory for slave zone should be created
+  file:
+    path:  "{{ bind.changeroot }}/{{ bind.dnszonedir }}/slaves"
+    mode:  "0755"
+    state: "directory"
+    owner: "{{ bind.user.username }}"
+    group: "{{ bind.user.group }}"
+
 - name: make-config | Sub directories for slave zone should be created
   file:
-    path:  "{{ bind.changeroot }}/var/data/slaves/{{ item }}"
+    path:  "{{ bind.changeroot }}/{{ bind.dnszonedir }}/slaves/{{ item }}"
     mode:  "0755"
     owner: "{{ bind.user.username }}"
     group: "{{ bind.user.group }}"
@@ -107,17 +114,17 @@
     chdir:   "{{ bind.workingdir }}/bind-{{ bind.version }}"
     creates: "{{ bind.changeroot }}/etc/rootzone-dnssec-keys"
 
-- name: make-config | {{ bind.changeroot }}/var/data/named.root should be deployed
+- name: make-config | {{ bind.changeroot }}/{{ bind.dnszonedir }}/named.root should be deployed
   notify: Restart BIND
   get_url:
     url:  "ftp://rs.internic.net/domain/named.root"
-    dest: "{{ bind.changeroot }}/var/data/named.root"
+    dest: "{{ bind.changeroot }}/{{ bind.dnszonedir }}/named.root"
 
 - name: make-config | Master zone files should be deployed
   notify: Restart BIND
   template:
-    src:  "opt/named/var/data/masters/{{ item }}.j2"
-    dest: "{{ bind.changeroot }}/var/data/masters/{{ item }}"
+    src:  "opt/named/{{ bind.dnszonedir }}/masters/{{ item }}.j2"
+    dest: "{{ bind.changeroot }}/{{ bind.dnszonedir }}/masters/{{ item }}"
     mode: "0644"
     owner: "{{ bind.user.username }}"
     group: "{{ bind.user.group }}"

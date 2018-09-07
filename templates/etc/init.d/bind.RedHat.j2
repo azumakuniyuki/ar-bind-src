@@ -44,7 +44,7 @@ if [ -n "$ROOTDIR" ]; then
    fi;
 fi
 
-ROOTDIR_MOUNT='/etc/named /var/data /etc/named.conf /etc/rootzone-dnssec-keys 
+ROOTDIR_MOUNT='/etc/named {{ bind.dnszonedir }} /etc/named.conf /etc/rootzone-dnssec-keys 
 /etc/rndc.key /etc/bind.keys'
 
 mount_chroot_conf()

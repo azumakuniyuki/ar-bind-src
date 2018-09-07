@@ -9,10 +9,11 @@
 bind:
   started: true
   rebuild: false
-  version: "9.10.4-P8"
+  version: "9.11.4-P1"
   updateonly: false
   changeroot: "/opt/named"
   serverroot: "/opt/named"
+  dnszonedir: "/var/data"
   openssldir: "/opt/openssl"
   workingdir: "/usr/local/src"
   initscript: "bind"
