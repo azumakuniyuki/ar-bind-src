@@ -8,7 +8,7 @@
 # boot-script
 - block:
     - name: boot-script | RedHat | /etc/init.d/bind should be deployed
-      when: ansible_distribution_major_version < 7
+      when: ansible_distribution_major_version < "7"
       template:
         src:   "etc/init.d/bind.RedHat.j2"
         dest:  "/etc/init.d/{{ bind.initscript }}"
@@ -17,13 +17,13 @@
         group: "root"
 
     - name: boot-script | RedHat | /etc/rc.d/init.d/{{ bind.initscript }} should be deployed
-      when: ansible_distribution_major_version < 7
+      when: ansible_distribution_major_version < "7"
       shell: /sbin/chkconfig --add {{ bind.initscript }}
       args:
         creates: "/etc/rc.d/rc0.d/K87{{ bind.initscript }}"
 
     - name: boot-script | RedHat | /usr/lib/systemd/system/{{ bind.initscript }}.service should be deployed
-      when: ansible_distribution_major_version > 6
+      when: ansible_distribution_major_version > "6"
       register: deploy_bind_service_unit
       template:
         src:   "usr/lib/systemd/system/bind.service.j2"
@@ -33,11 +33,11 @@
         group: "root"
 
     - name: boot-script | RedHat | {{ bind.initscript }} should be reloaded
-      when: ansible_distribution_major_version > 6 and deploy_bind_service_unit|changed
+      when: ansible_distribution_major_version > "6" and deploy_bind_service_unit|changed
       shell: systemctl daemon-reload
 
     - name: boot-script | RedHat | /usr/lib/systemd/system/{{ bind.initscript }}-rndc-key.service should be deployed
-      when: ansible_distribution_major_version > 6
+      when: ansible_distribution_major_version > "6"
       template:
         src:   "usr/lib/systemd/system/bind-rndc-key.service.j2"
         dest:  "/usr/lib/systemd/system/{{ bind.initscript }}-rndc-key.service"
@@ -46,7 +46,7 @@
         group: "root"
 
     - name: boot-script | RedHat | Deploy /etc/sysconfig/{{ bind.initscript }} should be deployed
-      when: ansible_distribution_major_version > 6
+      when: ansible_distribution_major_version > "6"
       notify: Restart BIND
       template:
         src:    "etc/sysconfig/bind.j2"
