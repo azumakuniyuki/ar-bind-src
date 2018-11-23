@@ -33,7 +33,7 @@
         group: "root"
 
     - name: boot-script | RedHat | {{ bind.initscript }} should be reloaded
-      when: ansible_distribution_major_version > "6" and deploy_bind_service_unit|changed
+      when: ansible_distribution_major_version > "6" and deploy_bind_service_unit is changed
       shell: systemctl daemon-reload
 
     - name: boot-script | RedHat | /usr/lib/systemd/system/{{ bind.initscript }}-rndc-key.service should be deployed
