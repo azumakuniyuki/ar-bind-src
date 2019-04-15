@@ -73,6 +73,19 @@
     dest:   "{{ bind.changeroot }}/etc/named.conf"
     backup: "yes"
 
+- name: make-config | Deploy {{ bind.changeroot }}/etc/rndc.conf
+  notify: Restart BIND
+  template:
+    src:    "opt/named/etc/rndc.conf.j2"
+    dest:   "{{ bind.changeroot }}/etc/rndc.conf"
+    backup: "yes"
+
+- name: make-config | Makefile should be deployed
+  template:
+    src:   "opt/named/etc/Makefile.j2"
+    dest:  "{{ bind.serverroot }}/etc/Makefile"
+    mode:  "0644"
+
 - name: make-config | Deploy {{ bind.serverroot }}/libexec/generate-rndc-key
   template:
     src:    "opt/named/libexec/generate-rndc-key.j2"
@@ -87,24 +100,27 @@
     chdir:   "{{ bind.changeroot }}"
     creates: "{{ bind.changeroot }}/etc/localtime"
 
-- name: make-config | {{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key should be created
+- name: make-config | etc/loopback-control-key should be created
   notify: Restart BIND
   shell: >
     {{ bind.serverroot }}/sbin/rndc-confgen -a -p 953
-    -c /etc/{{ ansible_hostname }}-rndc-key 
-    -k {{ ansible_hostname }}-rndc-key
+    -c /etc/loopback-control-key
+    -k loopback-control-key
     -r /dev/urandom
     -u {{ bind.user.username }}
     -t {{ bind.changeroot }}
   args:
     chdir:   "{{ bind.changeroot }}"
-    creates: "{{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key"
+    creates: "{{ bind.changeroot }}/etc/loopback-control-key"
 
-- name: make-config | {{ bind.changeroot }}/etc/rndc.key should be linked
-  file:
-    src:   "{{ bind.changeroot }}/etc/{{ ansible_hostname }}-rndc-key"
-    path:  "{{ bind.changeroot }}/etc/rndc.key"
-    state: "link"
+- name: make-config | etc/authorized-rndc-keys should be deployed
+  template:
+    src:    "opt/named/etc/authorized-rndc-keys.j2"
+    dest:   "{{ bind.serverroot }}/etc/authorized-rndc-keys"
+    mode:   "0600"
+    owner:  "named"
+    group:  "root"
+    backup: "yes"
 
 - name: make-config | {{ bind.changeroot }}/etc/rootzone-dnssec-keys should be deployed
   notify: Restart BIND
@@ -141,11 +157,4 @@
     src:   "{{ bind.serverroot }}/sbin/rndc"
     dest:  "/usr/local/sbin/rndc"
     state: "link"
-
-- name: make-config | Port 53 should be opened
-  firewalld:
-    service:   "dns"
-    state:     "enabled"
-    immediate: true
-    permanent: true
 

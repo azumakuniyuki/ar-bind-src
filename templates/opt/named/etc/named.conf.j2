@@ -123,7 +123,8 @@ include "/etc/rootzone-dnssec-keys";
 /****************************************************************************
  ** RNDC Configurations
  ***************************************************************************/
-include "/etc/{{ ansible_hostname }}-rndc-key";
+include "/etc/loopback-control-key";
+include "/etc/authorized-rndc-keys";
 controls { 
     inet 127.0.0.1 port 953
     allow { 127.0.0.1; }

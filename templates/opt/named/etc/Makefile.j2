@@ -1,0 +1,67 @@
+# /opt/named/etc/Makefile
+#  __  __       _         __ _ _
+# |  \/  | __ _| | _____ / _(_) | ___
+# | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
+# | |  | | (_| |   <  __/  _| | |  __/
+# |_|  |_|\__,_|_|\_\___|_| |_|_|\___|
+# -----------------------------------------------------------------------------
+BINDOWNER  = {{ bind.user.username }}
+BINDGROUP  = {{ bind.user.group }}
+DAEMONNAME = {{ bind.initscript }}
+
+CHANGEROOT = {{ bind.changeroot }}
+SERVERROOT = {{ bind.serverroot }}
+NAMEDCONF  = {{ bind.serverroot }}/etc/named.conf
+DNSZONEDIR = {{ bind.serverroot }}/var/data
+
+SBINDIR    = {{ bind.serverroot }}/sbin
+UBINDIR    = {{ bind.serverroot }}/bin
+
+RNDC       = $(SBINDIR)/rndc
+CHECKCONF  = $(SBINDIR)/named-checkconf
+CHECKZONE  = $(SBINDIR)/named-checkzone
+Z         := localhost
+
+MKDIR      = mkdir -p
+RM         = rm -f
+MV         = mv
+CP         = cp
+
+NAMEDCTL   = status
+SYSTEMDCTL = start stop restart
+
+.DEFAULT_GOAL = check
+
+# -----------------------------------------------------------------------------
+.PHONY: clean
+check:
+	$(MAKE) check-conf
+	$(MAKE) check-zone
+
+check-conf:
+	$(CHECKCONF) -t $(CHANGEROOT) /etc/named.conf
+
+check-zone:
+	@for v in `grep -A2 -B2 -E 'type master;' $(NAMEDCONF) | grep -E '(zone|file)' | tr -d "\n" | tr ';' "\n" | sed -e 's/zone "\(.*\)".*file "\(.*\)"/\1:\2/g'`; do \
+		$(CHECKZONE) -t $(CHANGEROOT) `echo $$v | tr ':' ' '`; \
+	done
+
+reload-zone:
+	$(RNDC) freeze $(Z)
+	$(RNDC) reload $(Z)
+	$(RNDC) thaw   $(Z)
+
+tsig-key:
+	$(SBINDIR)/dnssec-keygen -a HMAC-MD5 -b 512 -n HOST {{ ansible_fqdn }}
+
+$(SYSTEMDCTL): check
+	/usr/bin/systemctl $@ $(DAEMONNAME)
+
+status:
+	/usr/bin/systemctl $@ $(DAEMONNAME)
+	$(RNDC) status
+
+clean:
+	$(MKDIR) ./histories
+	$(MV) ./*.*~ ./histories
+

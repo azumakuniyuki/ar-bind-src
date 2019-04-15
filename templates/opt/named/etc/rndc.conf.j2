@@ -1,0 +1,14 @@
+/****************************************************************************
+ ** RNDC Configurations
+ ***************************************************************************/
+options {
+    default-key "loopback-control-key";
+    default-server 127.0.0.1;
+    default-port 953;
+};
+
+key "loopback-control-key" {
+    algorithm hmac-md5;
+    secret "";
+};
+

@@ -11,7 +11,9 @@
 - { include: get-archive.yml }
 - { include: compile-src.yml }
 - { include: make-config.yml, when: bind.updateonly == false }
+- { include: build-local.yml }
 - { include: boot-script.yml }
+- { include: port-config.yml }
 
 - name: Start bind9
   when: bind.started == true
