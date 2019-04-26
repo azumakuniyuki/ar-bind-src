@@ -15,6 +15,7 @@ bind:
   serverroot: "/opt/named"
   dnszonedir: "/var/data"
   openssldir: "/opt/openssl"
+  pythonpath: "/usr/bin/python"
   workingdir: "/usr/local/src"
   initscript: "bind"
   user:

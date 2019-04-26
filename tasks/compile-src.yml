@@ -18,6 +18,7 @@
   shell: >
     /bin/sh configure
     --prefix={{ bind.serverroot }}
+    --with-python={{ bind.pythonpath }}
     --with-openssl={{ bind.openssldir }}
     --enable-largefile
     --disable-ipv6
