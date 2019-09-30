@@ -48,23 +48,22 @@
 - name: install-pkg | Debian | Development tools should be installed
   when: ansible_os_family == "Debian"
   apt:
-    name:  "{{ item }}"
     state: "present"
-  with_items:
-    - "autotools-dev"
-    - "autoconf2.59"
-    - "automake1.11"
-    - "gcc"
-    - "gettext"
-    - "git"
-    - "libncurses-dev"
-    - "libpcre3"
-    - "libpcre3-dev"
-    - "libreadline6-dev"
-    - "libreadline6"
-    - "ncurses-dev"
-    - "openssl"
-    - "patch"
+    name:
+      - "autotools-dev"
+      - "autoconf2.59"
+      - "automake1.11"
+      - "gcc"
+      - "gettext"
+      - "git"
+      - "libncurses-dev"
+      - "libpcre3"
+      - "libpcre3-dev"
+      - "libreadline6-dev"
+      - "libreadline6"
+      - "ncurses-dev"
+      - "openssl"
+      - "patch"
 
 - name: install-pkg | Python egg for the dnssec-keymgr should be installed
   pip:
