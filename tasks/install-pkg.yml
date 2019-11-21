@@ -44,6 +44,8 @@
       - "perl-core"
       - "readline"
       - "readline-devel"
+      - "libcap"
+      - "libcap-devel"
 
 - name: install-pkg | Debian | Development tools should be installed
   when: ansible_os_family == "Debian"
